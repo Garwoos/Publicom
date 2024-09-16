@@ -1,45 +1,103 @@
 <?php
+// Informations de connexion à la base de données
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "Publicom";
+
+// Créer une connexion
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Vérifier la connexion
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Récupérer tous les messages
+$sql = "SELECT * FROM message";
+$data = $conn->query($sql);
 
 ?>
-
-<html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ma Page PHP</title>
+    <title>Accueil</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-    <h1>Bienvenue sur ma page PHP</h1>
-    <p>Ceci est un paragraphe de démonstration.</p>
-    <p>La date et l'heure actuelles sont : 
+    <h1>Messages</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Texte</th>
+            <th>Lien</th>
+            <th>Mail du créateur</th>
+            <th>Online</th>
+            <th>Modifier</th>
+            <th>supprimer</th>
+        </tr>
         <?php
-            echo date('Y-m-d H:i:s');
-        ?>
-    </p>
-<h1>Page d'inscription</h1>
-<form action="index.php" method="post">
-    <label for="username">Nom d'utilisateur:</label><br>
-    <input type="text" id="username" name="username" required><br><br>
-    <label for="email">Email:</label><br>
-    <input type="email" id="email" name="email" required><br><br>
-    <label for="password">Mot de passe:</label><br>
-    <input type="password" id="password" name="password" required><br><br>
-    <input type="submit" value="S'inscrire">
-</form>
-
-<?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = htmlspecialchars($_POST['username']);
-    $email = htmlspecialchars($_POST['email']);
-    $password = htmlspecialchars($_POST['password']);
-
-    // Ici, vous pouvez ajouter du code pour enregistrer les données dans une base de données
-
-    echo "<h2>Inscription réussie!</h2>";
-    echo "<p>Nom d'utilisateur: $username</p>";
-    echo "<p>Email: $email</p>";
-}
-?>
+                if ($data->num_rows > 0) {
+                    // Afficher les données de chaque ligne
+                    while($row = $data->fetch_assoc()) {
+                        echo "<tr>
+                        <td>" . $row["idMessage"]. "</td>
+                        <td>" . $row["Title"]. "</td>
+                        <td>" . $row["Text"]. "</td>
+                        <td><a href='" . $row["lien"] . "'>" . $row["lien"] . "</a></td>
+                        <td>" .$row["mailUser"]. "</td> <td>";
+                        
+                        // Afficher une checkbox pour le champ Online
+                        if ($row["Online"]) {
+                            echo "<input type='checkbox' checked disabled>";
+                        } else {
+                            echo "<input type='checkbox' disabled>";
+                        }
+                        
+                        // Ajouter les boutons Modifier et Supprimer
+                        echo "</td><td><a href='modifier.php?id=" . $row["idMessage"] . "'>Modifier</a></td>";
+                        echo "<td><a href='#' onclick='confirmDelete(" . $row["idMessage"] . ")'>Supprimer</a></td></tr>";
+                    }
+                } else {
+                    echo "<tr><td colspan='8'>Aucun message trouvé</td></tr>";
+                }
+                $conn->close();
+                ?>
+            </table>
+            <script>
+            function confirmDelete(id) {
+                if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "supprimer.php", true);
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            alert(xhr.responseText);
+                            // Rafraîchir la page pour refléter les changements
+                            location.reload();
+                        }
+                    };
+                    xhr.send("id=" + id);
+                }
+            }
+            </script>
 </body>
-</html>
+</html> 
